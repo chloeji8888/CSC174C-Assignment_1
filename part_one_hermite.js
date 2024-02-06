@@ -43,10 +43,9 @@ const Part_one_hermite_base = defs.Part_one_hermite_base =
         this.ball_location = vec3(1, 1, 1);
         this.ball_radius = 0.25;
         this.spline = new HermitSpline();
-
-
+        const curves = (t)=> this.spline.getPosition(t)
+        this.curve = new Curve_Shape(curves, 1000, color(1, 0, 0, 1));
         
-
         // TODO: you should create a Spline class instance
       }
 
@@ -138,10 +137,7 @@ export class Part_one_hermite extends Part_one_hermite_base{ // **Part_one_hermi
     let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
         .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
     this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blue } );
-
-
-    // TODO: you should draw spline here.
-    // Create the curve shape once during initialization
+    this.curve.draw(caller, this.uniforms);
 
   }
 
@@ -262,6 +258,12 @@ parse_commands() {
 
 
   update_scene() { // callback for Draw button
+    // this.curve.draw(caller, this.uniforms);
+    // const newPosition = this.spline.getPosition(t);
+
+    const curves = (t)=> this.spline.getPosition(t)
+    this.curve = new Curve_Shape(curves, 1000, color(1, 0, 0, 1));
+    // this.curve.draw()
     document.getElementById("output").value = "update_scene";
     //TODO
   }
@@ -314,6 +316,10 @@ export class HermitSpline{
     }
 
     getPosition(t) {
+
+    if (this.controlPoints.length === 0) {
+        return vec3(0, 0, 0);
+    }
     const A = Math.floor(t * (this.controlPoints.length - 1));
     const B = Math.ceil(t * (this.controlPoints.length - 1));
     const s = (t * (this.controlPoints.length - 1)) % 1.0;
