@@ -165,44 +165,44 @@ export class Part_one_hermite extends Part_one_hermite_base{ // **Part_one_hermi
     //   console.log(text);
     //   document.getElementById("output").value = text;
     // } );
-this.key_triggered_button("Calculate Arc Length", ["c"], function() {
-  // Clear the spline data
-  this.spline = new HermitSpline();
-  let outputText = "";
+// this.key_triggered_button("Calculate Arc Length", ["c"], function() {
+//   // Clear the spline data
+//   this.spline = new HermitSpline();
+//   let outputText = "";
   
-  // Get the input text
-  let text = document.getElementById("input").value;
+//   // Get the input text
+//   let text = document.getElementById("input").value;
   
-  // Split the input text into lines
-  const commands = text.split("\n");
+//   // Split the input text into lines
+//   const commands = text.split("\n");
 
-  // Process each line
-  commands.forEach((commandString) => {
-    const parts = commandString.split(" ");
-    const commandType = parts[0];
+//   // Process each line
+//   commands.forEach((commandString) => {
+//     const parts = commandString.split(" ");
+//     const commandType = parts[0];
 
-    // Parse the 'add point' command
-    if (commandType === "add" && parts[1] === "point" && parts.length === 8) {
-      // Extract point and tangent coordinates from the command
-      const point = vec3(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
-      const tangent = vec3(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
+//     // Parse the 'add point' command
+//     if (commandType === "add" && parts[1] === "point" && parts.length === 8) {
+//       // Extract point and tangent coordinates from the command
+//       const point = vec3(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
+//       const tangent = vec3(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
 
-      // Add point and tangent to the spline
-      this.spline.addPoint(point, tangent);
-    }
-  });
+//       // Add point and tangent to the spline
+//       this.spline.addPoint(point, tangent);
+//     }
+//   });
 
-  // Calculate the arc length of the spline
-  const arcLength = this.spline.getArcLength();
-  // Include the size of points and tangents in the output text
-  // outputText += `Total number of points: ${this.spline.controlPoints.length}\n`;
-  // outputText += `Total number of tangents: ${this.spline.tangents.length}`;
+//   // Calculate the arc length of the spline
+//   const arcLength = this.spline.getArcLength();
+//   // Include the size of points and tangents in the output text
+//   // outputText += `Total number of points: ${this.spline.controlPoints.length}\n`;
+//   // outputText += `Total number of tangents: ${this.spline.tangents.length}`;
 
 
-  // Display the arc length in the output
-  document.getElementById("output").value = `Arc Length: ${arcLength}`;
-  // document.getElementById("output").value = outputText;
-});
+//   // Display the arc length in the output
+//   document.getElementById("output").value = `Arc Length: ${arcLength}`;
+//   // document.getElementById("output").value = outputText;
+// });
 
     // this.new_line();
     // this.key_triggered_button( "Relocate", [ "r" ], function() {
@@ -249,14 +249,15 @@ parse_commands() {
     }
   });
   // Include the size of points and tangents in the output text
-  outputText += `Total number of points: ${this.spline.controlPoints.length}\n`;
-  outputText += `Total number of tangents: ${this.spline.tangents.length}`;
-
+  // outputText += `Total number of points: ${this.spline.controlPoints.length}\n`;
+  // outputText += `Total number of tangents: ${this.spline.tangents.length}`;
+  const arcLength = this.spline.getArcLength();
   // document.getElementById("output").value = outputText;
 
-  document.getElementById("output").value = "Parsed commends";
+  // document.getElementById("output").value = "Parsed commends";
   // Set the output text or a "not parsed" message if outputText is empty
   // document.getElementById("output").value = outputText || "No valid commands parsed.";
+  document.getElementById("output").value = `Parsed commends\nArc Length: ${arcLength}`;
 }
 
 
@@ -317,10 +318,10 @@ export class HermitSpline{
     const B = Math.ceil(t * (this.controlPoints.length - 1));
     const s = (t * (this.controlPoints.length - 1)) % 1.0;
 
-    const p0 = this.controlPoints[A];
-    const m0 = this.tangents[A];
-    const p1 = this.controlPoints[B];
-    const m1 = this.tangents[B];
+    let p0 = this.controlPoints[A].copy();
+    let m0 = this.tangents[A].copy();
+    let p1 = this.controlPoints[B].copy();
+    let m1 = this.tangents[B].copy();
 
     // Hermite basis functions
     const h0 = (2 * s * s * s) - (3 * s * s) + 1;

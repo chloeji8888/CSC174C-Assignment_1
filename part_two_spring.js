@@ -3,7 +3,6 @@ import {tiny, defs} from './examples/common.js';
 // Pull these names into this module's scope for convenience:
 const { vec3, vec4, color, Mat4, Shape, Material, Shader, Texture, Component } = tiny;
 
-// TODO: you should implement the required classes here or in another file.
 
 export
 const Part_two_spring_base = defs.Part_two_spring_base =
@@ -44,6 +43,7 @@ const Part_two_spring_base = defs.Part_two_spring_base =
         this.ball_radius = 0.25;
 
         // TODO: you should create the necessary shapes
+        this.particle = new ParticleSystem(vec3(0, -9.81, 0));
       }
 
       render_animation( caller )
@@ -169,13 +169,159 @@ export class Part_two_spring extends Part_two_spring_base
      */
   }
 
+  // parse_commands() {
+  //   let inputText = document.getElementById("input").value;
+  //   let outputText = "";
+  //   const commands = inputText.split("\n");
+  //   for (const command of commands) {
+  //     const parts = command.split(" ");
+  //     if (parts[0] === "create" && parts[1] === "particles") {
+  //       const numParticles = parseInt(parts[2]);
+  //       if (!isNaN(numParticles)) {
+  //         this.particle.createParticles(numParticles);
+  //         outputText += `Created ${numParticles} particles\n`;
+  //       } else {
+  //         outputText += `Invalid number of particles: ${parts[2]}\n`;
+  //       }
+  //     }
+  //     // Add more command parsing as necessary
+  //   }
+  //   document.getElementById("output").value = outputText;
+  // }
+
   parse_commands() {
-    document.getElementById("output").value = "parse_commands";
-    //TODO
+  let inputText = document.getElementById("input").value;
+  let outputText = "";
+  const commands = inputText.split("\n");
+
+  for (const command of commands) {
+    const parts = command.split(" ");
+    const commandType = parts[0];
+
+    switch (commandType) {
+      case "create":
+        if (parts[0] === "create" && parts[1] === "particles") {
+        const numParticles = parseInt(parts[2]);
+        if (!isNaN(numParticles)) {
+          this.particle.createParticles(numParticles);
+          outputText += `Created ${numParticles} particles\n`;
+        } else {
+          outputText += `Invalid number of particles: ${parts[2]}\n`;
+        }
+      }
+        break;
+      case "particle":
+        if (parts.length === 9) { // Ensure there are enough parts for the command
+          const index = parseInt(parts[1]);
+          const mass = parseFloat(parts[2]);
+          const posX = parseFloat(parts[3]);
+          const posY = parseFloat(parts[4]);
+          const posZ = parseFloat(parts[5]);
+          const velX = parseFloat(parts[6]);
+          const velY = parseFloat(parts[7]);
+          const velZ = parseFloat(parts[8]);
+          
+          if (this.particle.particles[index] !== undefined) {
+            const position = vec3(posX, posY, posZ);
+            const velocity = vec3(velX, velY, velZ);
+            this.particle.particles[index].setProperties(mass, position, velocity);
+            outputText += `Particle ${index} updated\n`;
+          } else {
+            outputText += `Particle ${index} does not exist\n`;
+          }
+        } else {
+          outputText += `Invalid particle command format\n`;
+        }
+        break;
+
+      case "all_velocities":
+        if (parts.length === 4) { // Check if the command has the correct number of arguments
+          const velX = parseFloat(parts[1]);
+          const velY = parseFloat(parts[2]);
+          const velZ = parseFloat(parts[3]);
+
+          if (!isNaN(velX) && !isNaN(velY) && !isNaN(velZ)) {
+            const newVelocity = vec3(velX, velY, velZ);
+            this.particle.particles.forEach(parti => {
+              parti.velocity = newVelocity;
+            });
+            outputText += `All velocities set to (${velX}, ${velY}, ${velZ})\n`;
+          } else {
+            outputText += `Invalid velocity values: ${parts[1]} ${parts[2]} ${parts[3]}\n`;
+          }
+        } else {
+          outputText += `Invalid all_velocities command format\n`;
+        }
+        break;
+
+        // Handle other commands as necessary
+      default:
+        outputText += `Unrecognized command: ${command}\n`;
+        break;
+    }
   }
+
+  document.getElementById("output").value = outputText;
+}
+
 
   start() { // callback for Run button
     document.getElementById("output").value = "start";
     //TODO
   }
+}
+
+export 
+class Particle {
+  constructor(mass = 1, position = vec3(0, 0, 0), velocity = vec3(0, 0, 0)) {
+    this.mass = mass;
+    this.position = position;
+    this.velocity = velocity;
+  }
+
+  // Method to update the particle's properties
+  setProperties(mass, position, velocity) {
+    this.mass = mass;
+    this.position = position;
+    this.velocity = velocity;
+  }
+
+}
+
+export 
+class ParticleSystem {
+  constructor(gravity = vec3(0, -9.81, 0)) {
+    this.particles = [];
+    this.springs = [];
+    this.gravity = gravity;
+    // You will need to add properties for ground parameters, integration method, etc.
+  }
+
+  createParticles(number) {
+    this.particles = []; // Reset the particle system
+    for (let i = 0; i < number; i++) {
+      // Initialize particles at the origin or as per specific requirements
+      this.particles.push(new Particle());
+    }
+  }
+
+ 
+
+  // Method to add a spring to the system
+  addSpring(spring) {
+    this.springs.push(spring);
+  }
+
+  // Method to update the system state using the chosen integration method
+  update(timestep) {
+    // Apply gravity to all particles
+    // Apply spring forces
+    // Integrate velocities and positions
+    // Handle collisions with the ground
+  }
+
+  // Methods for different integration techniques
+  forwardEuler(timestep) { /* ... */ }
+  symplecticEuler(timestep) { /* ... */ }
+  verlet(timestep) { /* ... */ }
 }
