@@ -218,6 +218,8 @@ export class Part_one_hermite extends Part_one_hermite_base{ // **Part_one_hermi
     
   }
 parse_commands() {
+  this.spline.controlPoints = [];
+  this.spline.tangents = [];
   let text = document.getElementById("input").value;
   const commands = text.split("\n"); // Split the input into lines
   let outputText = ""; // Initialize output text
@@ -230,53 +232,91 @@ parse_commands() {
 
     // Check if there are exactly 8 parts following the command type "add point"
     if (commandType === "add" && parts[1] === "point" && parts.length === 8) {
-      // Extract point and tangent coordinates from the command
       const point = vec3(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
       const tangent = vec3(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
-      // Add point and tangent to the spline
       this.spline.addPoint(point, tangent);
 
       // Append the point and tangent to the output text
-      // outputText += `Point ${index}: (${point[0]}, ${point[1]}, ${point[2]}), `;
-      // outputText += `Tangent ${index}: (${tangent[0]}, ${tangent[1]}, ${tangent[2]})\n`;
+      outputText += `Point added: (${point[0]}, ${point[1]}, ${point[2]}), `;
+      outputText += `Tangent: (${tangent[0]}, ${tangent[1]}, ${tangent[2]})\n`;
+    } else if (commandType === "set" && parts[1] === "tangent" && parts.length === 6) {
+      const idx = parseInt(parts[2]);
+      const tangent = vec3(parseFloat(parts[3]), parseFloat(parts[4]), parseFloat(parts[5]));
+      this.spline.setTangent(idx, tangent);
+      outputText += `Tangent ${idx} set to: (${tangent[0]}, ${tangent[1]}, ${tangent[2]})\n`;
+    } else if (commandType === "set" && parts[1] === "point" && parts.length === 6) {
+      const idx = parseInt(parts[2]);
+      const point = vec3(parseFloat(parts[3]), parseFloat(parts[4]), parseFloat(parts[5]));
+      this.spline.setPoint(idx, point);
+      outputText += `Point ${idx} set to: (${point[0]}, ${point[1]}, ${point[2]})\n`;
     } else {
-      // If the command is not recognized, log it for debugging
-      console.log(`Unrecognized command: ${commandString}`);
+      outputText += `Unrecognized command: ${commandString}\n`;
     }
   });
-  // Include the size of points and tangents in the output text
-  // outputText += `Total number of points: ${this.spline.controlPoints.length}\n`;
-  // outputText += `Total number of tangents: ${this.spline.tangents.length}`;
-  const arcLength = this.spline.getArcLength();
-  // document.getElementById("output").value = outputText;
 
-  // document.getElementById("output").value = "Parsed commends";
-  // Set the output text or a "not parsed" message if outputText is empty
-  // document.getElementById("output").value = outputText || "No valid commands parsed.";
-  document.getElementById("output").value = `Parsed commends\nArc Length: ${arcLength}`;
+  const arcLength = this.spline.getArcLength();
+  outputText += `Total number of points: ${this.spline.controlPoints.length}\n`;
+  outputText += `Total number of tangents: ${this.spline.tangents.length}\n`;
+  outputText += `Arc Length: ${arcLength}`;
+
+  document.getElementById("output").value = outputText || "No valid commands parsed.";
 }
 
 
-  update_scene() { // callback for Draw button
-    // this.curve.draw(caller, this.uniforms);
-    // const newPosition = this.spline.getPosition(t);
 
+  update_scene() { // callback for Draw button
     const curves = (t)=> this.spline.getPosition(t)
     this.curve = new Curve_Shape(curves, 1000, color(1, 0, 0, 1));
-    // this.curve.draw()
     document.getElementById("output").value = "update_scene";
-    //TODO
   }
 
   load_spline() {
-    document.getElementById("output").value = "load_spline";
-    //TODO
+  let text = document.getElementById("input").value;
+  const commands = text.split("\n"); // Split the input into lines
+
+  // Reset the spline
+  this.spline = new HermitSpline(); 
+
+  commands.forEach((commandString) => {
+    // Trim any leading/trailing whitespace from the commandString
+    commandString = commandString.trim();
+    const parts = commandString.split(/\s+/); // Split on one or more spaces
+    const commandType = parts[0];
+
+    if (commandType === "add" && parts[1] === "point" && parts.length === 8) {
+      const point = vec3(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
+      const tangent = vec3(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
+      this.spline.addPoint(point, tangent);
+    } else if (commandType === "set" && parts[1] === "point" && parts.length === 6) {
+      const idx = parseInt(parts[2]) - 1; // assuming index starts from 1 in the input
+      const point = vec3(parseFloat(parts[3]), parseFloat(parts[4]), parseFloat(parts[5]));
+      this.spline.setPoint(idx, point);
+    } else if (commandType === "set" && parts[1] === "tangent" && parts.length === 6) {
+      const idx = parseInt(parts[2]) - 1; // assuming index starts from 1 in the input
+      const tangent = vec3(parseFloat(parts[3]), parseFloat(parts[4]), parseFloat(parts[5]));
+      this.spline.setTangent(idx, tangent);
+    }
+    // Add any other command types you need to handle
+  });
+
+  document.getElementById("output").value = "Spline loaded successfully";
+  this.update_scene(); // Update the scene with the new spline
+}
+
+ export_spline() {
+  const n = this.spline.controlPoints.length;
+  let outputText = `${n}`; // Start with the number of control points
+
+  for (let i = 0; i < n; i++) {
+    const c = this.spline.controlPoints[i];
+    const t = this.spline.tangents[i];
+    outputText += `\nc_${c[0]} c_${c[1]} c_${c[2]} t_${t[0]} t_${t[1]} t_${t[2]}`;
   }
 
-  export_spline() {
-    document.getElementById("output").value = "export_spline";
-    //TODO
-  }
+  document.getElementById("output").value = outputText;
+}
+
+
 }
 
 export class HermitSpline{
