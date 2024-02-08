@@ -44,6 +44,7 @@ const Part_two_spring_base = defs.Part_two_spring_base =
 
         // TODO: you should create the necessary shapes
         this.particle = new ParticleSystem(vec3(0, -9.81, 0));
+        // this.ball_particle = new Ball(vec3(0,0,0), 0.25,color(1, 0, 0, 1));
       }
 
       render_animation( caller )
@@ -131,7 +132,7 @@ export class Part_two_spring extends Part_two_spring_base
     let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
         .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
     this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blue } );
-
+    // this.particle.drawParticles(caller, this.shapes, this.uniforms, this.materials.metal)
     // TODO: you should draw spline here.
   }
 
@@ -208,8 +209,13 @@ export class Part_two_spring extends Part_two_spring_base
         } else {
           outputText += `Invalid number of particles: ${parts[2]}\n`;
         }
+      }else if(parts[0] === "create" && parts[1] === "springs"){
+        const numSprings = parseInt(parts[2]);
+        this.particle.createSprings(numSprings);
+        outputText += `Created ${numSprings} springs\n`;
       }
         break;
+
       case "particle":
         if (parts.length === 9) { // Ensure there are enough parts for the command
           const index = parseInt(parts[1]);
@@ -254,9 +260,27 @@ export class Part_two_spring extends Part_two_spring_base
         }
         break;
 
+      case "link":
+        const sindex = parseInt(parts[1]);
+        const pindex1 = parseInt(parts[2]);
+        const pindex2 = parseInt(parts[3]);
+        const ks = parseFloat(parts[4]);
+        const kd = parseFloat(parts[5]);
+        const length = parseFloat(parts[6]);
+        this.particle.link(sindex, pindex1, pindex2, ks, kd, length);
+        outputText += `Linked ${pindex1} particle and ${pindex2} with ${sindex} spring and ${ks}  ${kd} `;
+        break;
+
         // Handle other commands as necessary
       default:
         outputText += `Unrecognized command: ${command}\n`;
+        break;
+
+      case "ground":
+        const elasity = parseInt (parts[1]);
+        const viscosity = parseInt (parts[2]);
+        this.particle.ground(elasity, viscosity);
+        outputText += `particles elasity: ${parts[1]}\nparticles visicosity: ${parts[2]}`;
         break;
     }
   }
@@ -266,6 +290,7 @@ export class Part_two_spring extends Part_two_spring_base
 
 
   start() { // callback for Run button
+    this.particle.update();
     document.getElementById("output").value = "start";
     //TODO
   }
@@ -277,6 +302,8 @@ class Particle {
     this.mass = mass;
     this.position = position;
     this.velocity = velocity;
+    this.force = vec3(0, 0, 0); // Initialize total force acting on particle
+    // this.ball = new Ball(position, radius, color);
   }
 
   // Method to update the particle's properties
@@ -286,13 +313,54 @@ class Particle {
     this.velocity = velocity;
   }
 
+  applyForce(force) {
+    this.force.add(force); // Accumulate forces acting on the particle
+  }
+
+  integrate(timestep) {
+    // Use the Forward Euler method to integrate motion
+    let acceleration = this.force.clone().divideScalar(this.mass);
+    this.velocity.add(acceleration.multiplyScalar(timestep));
+    this.position.add(this.velocity.clone().multiplyScalar(timestep));
+    this.force.set(0, 0, 0); // Reset the force for the next iteration
+    // this.ball.position = this.position; 
+  }
+
 }
+
+export
+class Spring {
+  constructor(particle1, particle2, ks, kd, restLength) {
+    this.particle1 = particle1;
+    this.particle2 = particle2;
+    this.ks = ks; // Spring constant
+    this.kd = kd; // Damping constant
+    this.restLength = restLength < 0 ? particle1.position.distanceTo(particle2.position) : restLength;
+  }
+
+  applySpringForce() {
+    // Compute spring force as per Hooke's law and damping force
+    let distanceVec = this.particle2.position.clone().sub(this.particle1.position);
+    let distance = distanceVec.length();
+    let forceMagnitude = this.ks * (distance - this.restLength); // Hooke's law
+    let dampingForce = distanceVec.clone().normalize().multiplyScalar(this.kd * this.particle2.velocity.sub(this.particle1.velocity).dot(distanceVec.normalize()));
+    
+    let forceOnP1 = distanceVec.normalize().multiplyScalar(forceMagnitude).sub(dampingForce);
+    let forceOnP2 = forceOnP1.clone().multiplyScalar(-1);
+
+    this.particle1.applyForce(forceOnP1);
+    this.particle2.applyForce(forceOnP2);
+  }
+}
+
 
 export 
 class ParticleSystem {
   constructor(gravity = vec3(0, -9.81, 0)) {
     this.particles = [];
     this.springs = [];
+    this.elasitiy = 0;
+    this.viscosity = 0;
     this.gravity = gravity;
     // You will need to add properties for ground parameters, integration method, etc.
   }
@@ -305,23 +373,88 @@ class ParticleSystem {
     }
   }
 
- 
-
-  // Method to add a spring to the system
-  addSpring(spring) {
-    this.springs.push(spring);
+  // Method to add placeholders for a specified number of springs
+  createSprings(number) {
+    for (let i = 0; i < number; i++) {
+      this.springs.push(null); // Add null or a placeholder spring object
+    }
   }
 
-  // Method to update the system state using the chosen integration method
+  ground(ks, kd){
+    this.elasitiy = ks;
+    this.viscosity = kd;
+  }
+
+  // Method to link two particles with a spring
+  link(sindex, pindex1, pindex2, ks, kd, length) {
+    if (sindex < this.springs.length) {
+      let particle1 = this.particles[pindex1];
+      let particle2 = this.particles[pindex2];
+      this.elasitiy = ks;
+      this.viscosity = kd;
+      // Use the addSpring method to create and link the spring
+      this.addSpring(particle1, particle2, ks, kd, length);
+      this.springs[sindex] = this.springs[this.springs.length - 1]; // Assign the new spring to the correct index
+      this.springs.pop(); // Remove the last spring as it's now moved to the sindex position
+    } else {
+      console.error("Invalid spring index: " + sindex);
+    }
+  }
+
+
+
+  addSpring(particle1, particle2, ks, kd, restLength) {
+    // If the restLength is negative, calculate the current distance as the rest length
+    if (restLength < 0) {
+      restLength = particle1.position.distanceTo(particle2.position);
+    }
+    // Create a new spring instance
+    const newSpring = new Spring(particle1, particle2, ks, kd, restLength);
+    // Add the new spring to the array of springs
+    this.springs.push(newSpring);
+  }
+
+
+  /// Method to update the system state using Forward Euler integration
   update(timestep) {
     // Apply gravity to all particles
+    for (let particle of this.particles) {
+      particle.applyForce(this.gravity.multiplyScalar(particle.mass));
+    }
+
     // Apply spring forces
+    for (let spring of this.springs) {
+      spring.applySpringForce();
+    }
+
     // Integrate velocities and positions
-    // Handle collisions with the ground
+    for (let particle of this.particles) {
+      particle.integrate(timestep);
+    }
+
+    // Handle collisions with the ground and other particles if necessary
   }
 
-  // Methods for different integration techniques
-  forwardEuler(timestep) { /* ... */ }
+//   drawParticles(caller, shapes, uniforms, materials) {
+//   for (let particle of this.particles) {
+//     particle.ball.draw(caller, shapes, uniforms, materials); // Draw each particle's Ball
+//   }
+// }
+
   symplecticEuler(timestep) { /* ... */ }
   verlet(timestep) { /* ... */ }
+}
+
+export class Ball {
+  constructor(position = vec3(0, 0, 0), radius = 0.25, color = color(1, 0, 0, 1)) {
+    this.position = position;
+    this.radius = radius;
+    this.color = color;
+  }
+
+  draw(caller, shapes, uniforms, materials) {
+    let model_transform = Mat4.translation(this.position[0], this.position[1], this.position[2])
+                          .times(Mat4.scale(this.radius, this.radius, this.radius));
+    shapes.ball.draw(caller, uniforms, model_transform, {...materials.plastic, color: this.color});
+  }
 }
