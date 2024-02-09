@@ -42,6 +42,7 @@ const Part_one_hermite_base = defs.Part_one_hermite_base =
 
         this.ball_location = vec3(1, 1, 1);
         this.ball_radius = 0.25;
+
         this.spline = new HermitSpline();
         const curves = (t)=> this.spline.getPosition(t)
         this.curve = new Curve_Shape(curves, 1000, color(1, 0, 0, 1));
@@ -137,6 +138,7 @@ export class Part_one_hermite extends Part_one_hermite_base{ // **Part_one_hermi
     let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
         .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
     this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blue } );
+
     this.curve.draw(caller, this.uniforms);
 
   }
@@ -365,9 +367,9 @@ export class HermitSpline{
     const s = (t * (this.controlPoints.length - 1)) % 1.0;
 
     let p0 = this.controlPoints[A].copy();
-    let m0 = this.tangents[A].copy();
+    let m0 = this.tangents[A].copy().times(1.0 / this.controlPoints.length);
     let p1 = this.controlPoints[B].copy();
-    let m1 = this.tangents[B].copy();
+    let m1 = this.tangents[B].copy().times(1.0 / this.controlPoints.length);
 
     // Hermite basis functions
     const h0 = (2 * s * s * s) - (3 * s * s) + 1;
@@ -397,6 +399,7 @@ export class HermitSpline{
 
       return arcLength;
     }
+    // print the table of arclength - for each step 
 
 }
 

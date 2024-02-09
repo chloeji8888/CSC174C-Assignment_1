@@ -317,7 +317,7 @@ class Particle {
     this.force.add(force); // Accumulate forces acting on the particle
   }
 
-  integrate(timestep) {
+  integrate(timestep) {//delta t
     // Use the Forward Euler method to integrate motion
     let acceleration = this.force.clone().divideScalar(this.mass);
     this.velocity.add(acceleration.multiplyScalar(timestep));
@@ -342,8 +342,8 @@ class Spring {
     // Compute spring force as per Hooke's law and damping force
     let distanceVec = this.particle2.position.clone().sub(this.particle1.position);
     let distance = distanceVec.length();
-    let forceMagnitude = this.ks * (distance - this.restLength); // Hooke's law
-    let dampingForce = distanceVec.clone().normalize().multiplyScalar(this.kd * this.particle2.velocity.sub(this.particle1.velocity).dot(distanceVec.normalize()));
+    let forceMagnitude = this.ks * (distance - this.restLength) * distanceVec.normalize(); // Hooke's law// fs
+    let dampingForce = distanceVec.clone().normalize().multiplyScalar(this.kd * this.particle2.velocity.sub(this.particle1.velocity).dot(distanceVec.normalize()));//fd
     
     let forceOnP1 = distanceVec.normalize().multiplyScalar(forceMagnitude).sub(dampingForce);
     let forceOnP2 = forceOnP1.clone().multiplyScalar(-1);
@@ -352,6 +352,10 @@ class Spring {
     this.particle2.applyForce(forceOnP2);
   }
 }
+
+// outer loop : dt
+// inner loop: t-step 
+
 
 
 export 
