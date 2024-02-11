@@ -44,6 +44,13 @@ const Part_two_spring_base = defs.Part_two_spring_base =
 
         // TODO: you should create the necessary shapes
         this.particle = new ParticleSystem(vec3(0, -9.81, 0));
+        this.springShapes = []; // Use this array to store spring shapes
+        for (let i = 0; i <1000; i++) {
+            // Pre-allocate spring shapes with dummy positions
+            this.springShapes.push(new Spring_Shape(vec3(0, 0, 0), vec3(0, 0, 0), color(1, 0, 0, 1)));
+        }
+        // this.par_shape = new particle_Shape(0.25,this.particle.particles.length, color( .9,.5,.9,1 ));
+        // this.Spring_Shape = new Spring_Shape()
         // this.ball_particle = new Ball(vec3(0,0,0), 0.25,color(1, 0, 0, 1));
       }
 
@@ -127,13 +134,31 @@ export class Part_two_spring extends Part_two_spring_base
     // !!! Draw ground
     let floor_transform = Mat4.translation(0, 0, 0).times(Mat4.scale(10, 0.01, 10));
     this.shapes.box.draw( caller, this.uniforms, floor_transform, { ...this.materials.plastic, color: yellow } );
-
     // !!! Draw ball (for reference)
-    let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
-        .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
-    this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blue } );
-    // this.particle.drawParticles(caller, this.shapes, this.uniforms, this.materials.metal)
-    // TODO: you should draw spline here.
+    // let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
+    //     .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
+
+    // this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blue } );
+    // // Assuming a render or draw method that gets called every frame
+
+    for (let i = 0; i < this.particle.particles.length; i++) {
+      const p = this.particle.particles[i];
+      // Assuming each particle has a position property
+      let ball_transform = Mat4.translation(p.position[0], p.position[1], p.position[2])
+          .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
+      // Ensure 'blue' is defined correctly as a color
+      const blueColor = color(0, 0, 1, 1); // Example: Define blue using your color function
+      this.shapes.ball.draw(caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blueColor });
+    }
+
+    for(let j = 0; j < this.particle.springs.length; j++){
+      const spring = this.particle.springs[j];
+      let p1 = spring.particle1.position;
+      let p2 = spring.particle2.position;
+      this.springShapes[j].updateVertices(p1, p2);
+      this.springShapes[j].draw(caller, this.uniforms);
+    }
+
   }
 
   render_controls()
@@ -146,7 +171,7 @@ export class Part_two_spring extends Part_two_spring_base
     this.key_triggered_button( "Run", [], this.start );
     this.new_line();
 
-    /* Some code for your reference
+    //  Some code for your reference
     this.key_triggered_button( "Copy input", [ "c" ], function() {
       let text = document.getElementById("input").value;
       console.log(text);
@@ -167,7 +192,7 @@ export class Part_two_spring extends Part_two_spring_base
         document.getElementById("output").value = "invalid input";
       }
     } );
-     */
+  
   }
 
   // parse_commands() {
@@ -205,6 +230,7 @@ export class Part_two_spring extends Part_two_spring_base
         const numParticles = parseInt(parts[2]);
         if (!isNaN(numParticles)) {
           this.particle.createParticles(numParticles);
+
           outputText += `Created ${numParticles} particles\n`;
         } else {
           outputText += `Invalid number of particles: ${parts[2]}\n`;
@@ -231,13 +257,18 @@ export class Part_two_spring extends Part_two_spring_base
             const position = vec3(posX, posY, posZ);
             const velocity = vec3(velX, velY, velZ);
             this.particle.particles[index].setProperties(mass, position, velocity);
-            outputText += `Particle ${index} updated\n`;
+            const x = parseFloat(this.particle.particles[index].position[0]);
+            const y = parseFloat(this.particle.particles[index].position[1]);
+            const z = parseFloat(this.particle.particles[index].position[2]);
+            this.ball_location = vec3(x, y, z)
+            outputText += `Particle ${index}: ${x}, ${y}, ${z}\n`;
           } else {
             outputText += `Particle ${index} does not exist\n`;
           }
         } else {
           outputText += `Invalid particle command format\n`;
         }
+
         break;
 
       case "all_velocities":
@@ -290,9 +321,19 @@ export class Part_two_spring extends Part_two_spring_base
 
 
   start() { // callback for Run button
-    this.particle.update();
-    document.getElementById("output").value = "start";
-    //TODO
+    // Clear previous output or drawings if necessary
+  // For WebGL, you might clear the canvas or reset transformations
+
+ 
+
+    // Generate a transformation matrix for the particle
+    // This assumes you have a method to convert a particle's position to a transformation matrix
+    // The specifics of this would depend on your rendering context and how you handle transformations
+    
+
+    // Draw the ball using the generated transformation
+    // Assuming 'caller' and 'this.uniforms' are correctly set up context for your drawing function
+    
   }
 }
 
@@ -336,6 +377,7 @@ class Spring {
     this.ks = ks; // Spring constant
     this.kd = kd; // Damping constant
     this.restLength = restLength < 0 ? particle1.position.distanceTo(particle2.position) : restLength;
+    
   }
 
   applySpringForce() {
@@ -344,9 +386,9 @@ class Spring {
     let distance = distanceVec.length();
     let forceMagnitude = this.ks * (distance - this.restLength) * distanceVec.normalize(); // Hooke's law// fs
     let dampingForce = distanceVec.clone().normalize().multiplyScalar(this.kd * this.particle2.velocity.sub(this.particle1.velocity).dot(distanceVec.normalize()));//fd
-    
-    let forceOnP1 = distanceVec.normalize().multiplyScalar(forceMagnitude).sub(dampingForce);
-    let forceOnP2 = forceOnP1.clone().multiplyScalar(-1);
+    let viscoForce =  forceMagnitude + dampingForce ;
+    let forceOnP1 = viscoForce - this.particle1.mass* this.particle1.acceleration;
+    let forceOnP2 = viscoForce - this.particle2.mass* this.particle2.acceleration;
 
     this.particle1.applyForce(forceOnP1);
     this.particle2.applyForce(forceOnP2);
@@ -389,22 +431,33 @@ class ParticleSystem {
     this.viscosity = kd;
   }
 
-  // Method to link two particles with a spring
   link(sindex, pindex1, pindex2, ks, kd, length) {
-    if (sindex < this.springs.length) {
-      let particle1 = this.particles[pindex1];
-      let particle2 = this.particles[pindex2];
-      this.elasitiy = ks;
-      this.viscosity = kd;
-      // Use the addSpring method to create and link the spring
-      this.addSpring(particle1, particle2, ks, kd, length);
-      this.springs[sindex] = this.springs[this.springs.length - 1]; // Assign the new spring to the correct index
-      this.springs.pop(); // Remove the last spring as it's now moved to the sindex position
-    } else {
-      console.error("Invalid spring index: " + sindex);
-    }
+  // Validate indices
+  if (pindex1 < 0 || pindex1 >= this.particles.length || pindex2 < 0 || pindex2 >= this.particles.length) {
+    console.error("Invalid particle index: ", pindex1, pindex2);
+    return;
   }
 
+  // Retrieve particles
+  let particle1 = this.particles[pindex1];
+  let particle2 = this.particles[pindex2];
+
+  // Determine the rest length
+  const restLength = length < 0 ? particle1.position.distanceTo(particle2.position) : length;
+
+  // Create a new spring with the specified properties
+  const newSpring = new Spring(particle1, particle2, ks, kd, restLength);
+
+  // Check if sindex is within bounds and replace or add the spring accordingly
+  if (sindex >= 0 && sindex < this.springs.length) {
+    this.springs[sindex] = newSpring;
+  } else if (sindex === this.springs.length) {
+    // Adding a new spring at the end
+    this.springs.push(newSpring);
+  } else {
+    console.error("Invalid spring index: " + sindex);
+  }
+}
 
 
   addSpring(particle1, particle2, ks, kd, restLength) {
@@ -417,6 +470,7 @@ class ParticleSystem {
     // Add the new spring to the array of springs
     this.springs.push(newSpring);
   }
+
 
 
   /// Method to update the system state using Forward Euler integration
@@ -435,30 +489,38 @@ class ParticleSystem {
     for (let particle of this.particles) {
       particle.integrate(timestep);
     }
-
-    // Handle collisions with the ground and other particles if necessary
   }
-
-//   drawParticles(caller, shapes, uniforms, materials) {
-//   for (let particle of this.particles) {
-//     particle.ball.draw(caller, shapes, uniforms, materials); // Draw each particle's Ball
-//   }
-// }
 
   symplecticEuler(timestep) { /* ... */ }
   verlet(timestep) { /* ... */ }
 }
 
-export class Ball {
-  constructor(position = vec3(0, 0, 0), radius = 0.25, color = color(1, 0, 0, 1)) {
-    this.position = position;
-    this.radius = radius;
-    this.color = color;
+class Spring_Shape extends Shape {
+  constructor(p1, p2, line_color = color(1, 0, 0, 1)) {
+    super("position", "normal");
+    this.material = {
+      shader: new defs.Phong_Shader(),
+      ambient: 1.0,
+      color: line_color
+    };
+
+    // Convert vec3 to arrays if necessary
+    this.updateVertices(p1, p2);
   }
 
-  draw(caller, shapes, uniforms, materials) {
-    let model_transform = Mat4.translation(this.position[0], this.position[1], this.position[2])
-                          .times(Mat4.scale(this.radius, this.radius, this.radius));
-    shapes.ball.draw(caller, uniforms, model_transform, {...materials.plastic, color: this.color});
+  updateVertices(p1, p2) {
+    // Assuming p1 and p2 are vec3, convert to arrays of numbers for WebGL
+    this.arrays.position = [p1, p2];
+    // Define normals for each vertex (may not be necessary for simple line rendering)
+    this.arrays.normal = [[0, 0, 1], [0, 0, 1]];
+
+    // If your graphics framework requires manually updating the GPU data, do it here
+    // For example: this.copy_onto_graphics_card(webgl_manager.gl);
+  }
+
+  draw(webgl_manager, uniforms) {
+    // Ensure the draw mode is supported and correctly implemented in your Shape's base class
+    super.draw(webgl_manager, uniforms, Mat4.identity(), this.material, "LINES");
   }
 }
+
