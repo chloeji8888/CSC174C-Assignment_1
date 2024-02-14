@@ -53,7 +53,7 @@ Object.assign (defs,
 let scenes = {1: Part_one_hermite, 2: Part_two_spring, 3: Part_three_chain};
 const scene_selector = (i) => scenes[i];
 
-const main_scene        = Part_one_hermite; // default
+const main_scene        = Part_two_spring; // default
 const additional_scenes = [];
 
 export {main_scene, scene_selector, additional_scenes, defs};

@@ -367,9 +367,9 @@ export class HermitSpline{
     const s = (t * (this.controlPoints.length - 1)) % 1.0;
 
     let p0 = this.controlPoints[A].copy();
-    let m0 = this.tangents[A].copy().times(1.0 / this.controlPoints.length);
+    let m0 = this.tangents[A].copy().times(1.0 / (this.controlPoints.length-1));
     let p1 = this.controlPoints[B].copy();
-    let m1 = this.tangents[B].copy().times(1.0 / this.controlPoints.length);
+    let m1 = this.tangents[B].copy().times(1.0 / (this.controlPoints.length-1));
 
     // Hermite basis functions
     const h0 = (2 * s * s * s) - (3 * s * s) + 1;

@@ -43,12 +43,13 @@ const Part_two_spring_base = defs.Part_two_spring_base =
         this.ball_radius = 0.25;
 
         // TODO: you should create the necessary shapes
-        this.particle = new ParticleSystem(vec3(0, -9.81, 0));
+        this.particle = new ParticleSystem();
         this.springShapes = []; // Use this array to store spring shapes
-        for (let i = 0; i <1000; i++) {
-            // Pre-allocate spring shapes with dummy positions
-            this.springShapes.push(new Spring_Shape(vec3(0, 0, 0), vec3(0, 0, 0), color(1, 0, 0, 1)));
+        for(let i = 0; i < 10; i++){
+          this.springShapes.push(new Spring_Shape(vec3(0, 0, 0), vec3(0, 0, 0), color(1, 0, 0, 1)));
         }
+        // this.springShape = new Spring_Shape(vec3(0, 0, 0), vec3(0, 0, 0), color(1, 0, 0, 1));
+        
         // this.par_shape = new particle_Shape(0.25,this.particle.particles.length, color( .9,.5,.9,1 ));
         // this.Spring_Shape = new Spring_Shape()
         // this.ball_particle = new Ball(vec3(0,0,0), 0.25,color(1, 0, 0, 1));
@@ -140,25 +141,51 @@ export class Part_two_spring extends Part_two_spring_base
 
     // this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blue } );
     // // Assuming a render or draw method that gets called every frame
+    // for(let s = 0; s < 1000/60; s++){
+      // this.particle.update(s);
+      const timestep = 1/1000;
+      const totalSimulationTime = 1000; // total simulation time in "seconds" or units of time
+      const steps = 50; // 
 
-    for (let i = 0; i < this.particle.particles.length; i++) {
-      const p = this.particle.particles[i];
-      // Assuming each particle has a position property
-      let ball_transform = Mat4.translation(p.position[0], p.position[1], p.position[2])
-          .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
-      // Ensure 'blue' is defined correctly as a color
-      const blueColor = color(0, 0, 1, 1); // Example: Define blue using your color function
-      this.shapes.ball.draw(caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blueColor });
+      for (let i = 0; i < this.particle.particles.length; i++) {
+        const p = this.particle.particles[i];
+        // Assuming each particle has a position property
+        let ball_transform = Mat4.translation(p.position[0], p.position[1], p.position[2])
+            .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
+        // Ensure 'blue' is defined correctly as a color
+        const blueColor = color(0, 0, 1, 1); // Example: Define blue using your color function
+        this.shapes.ball.draw(caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blueColor });
+        // console.log(i + "Force: " + p.force);
+
+      }
+
+      for(let j = 0; j < this.particle.springs.length; j++){
+        const spring = this.particle.springs[j];
+        // console.log(spring);
+        let p1 = spring.particle1.position;
+        let p2 = spring.particle2.position;
+        console.log(p1);
+        console.log(p2);
+        this.springShapes[j].updateVertices(p1, p2);
+        this.springShapes[j].draw(caller, this.uniforms);
+      }
+
+    //  Assuming a fixed timestep for simplicity, e.g., 1/60th of a second for 60 FPS simulation
+    // Calculate the number of steps needed
+
+    for (let t = 0; t < steps; t++) {
+        this.particle.update(timestep);
+        t = t+timestep;
+        
+        // Optionally, log the position of one or more particles at certain intervals
+        // if (t % 60 === 0) { // For example, log every 1 second of simulation time
+        //     this.particle.particles.forEach((p, index) => {
+        //         console.log(`Particle ${index} position at time ${t * timestep}:`, p.position);
+        //     });
+        // }
     }
 
-    for(let j = 0; j < this.particle.springs.length; j++){
-      const spring = this.particle.springs[j];
-      let p1 = spring.particle1.position;
-      let p2 = spring.particle2.position;
-      this.springShapes[j].updateVertices(p1, p2);
-      this.springShapes[j].draw(caller, this.uniforms);
-    }
-
+    
   }
 
   render_controls()
@@ -261,7 +288,7 @@ export class Part_two_spring extends Part_two_spring_base
             const y = parseFloat(this.particle.particles[index].position[1]);
             const z = parseFloat(this.particle.particles[index].position[2]);
             this.ball_location = vec3(x, y, z)
-            outputText += `Particle ${index}: ${x}, ${y}, ${z}\n`;
+            outputText += `Particle ${index}: ${velocity}\n`;
           } else {
             outputText += `Particle ${index} does not exist\n`;
           }
@@ -313,27 +340,33 @@ export class Part_two_spring extends Part_two_spring_base
         this.particle.ground(elasity, viscosity);
         outputText += `particles elasity: ${parts[1]}\nparticles visicosity: ${parts[2]}`;
         break;
+
+      case "gravity":
+        const g  = parseFloat(parts[1]);
+        const G = g * (-1);
+        const gforce = vec3(0, G, 0);
+        this.particle.particles.forEach(parti => {
+              parti.acceleration = parti.setAcceleration(gforce);
+          });
+        outputText += `particles acce : ${gforce}`
     }
+
   }
 
   document.getElementById("output").value = outputText;
 }
 
 
-  start() { // callback for Run button
+  start() { 
+    // callback for Run button
     // Clear previous output or drawings if necessary
-  // For WebGL, you might clear the canvas or reset transformations
-
- 
-
+    // For WebGL, you might clear the canvas or reset transformations
     // Generate a transformation matrix for the particle
     // This assumes you have a method to convert a particle's position to a transformation matrix
     // The specifics of this would depend on your rendering context and how you handle transformations
-    
-
     // Draw the ball using the generated transformation
     // Assuming 'caller' and 'this.uniforms' are correctly set up context for your drawing function
-    
+  
   }
 }
 
@@ -344,7 +377,7 @@ class Particle {
     this.position = position;
     this.velocity = velocity;
     this.force = vec3(0, 0, 0); // Initialize total force acting on particle
-    // this.ball = new Ball(position, radius, color);
+    this.acceleration = vec3(0, 0, 0);
   }
 
   // Method to update the particle's properties
@@ -354,19 +387,21 @@ class Particle {
     this.velocity = velocity;
   }
 
+  setAcceleration(g){
+    this.acceleration = g.times(1/this.mass);
+  }
+
   applyForce(force) {
-    this.force.add(force); // Accumulate forces acting on the particle
+    // console.log(`Before applying force: ${this.force}`);
+    this.force = this.force.plus(force);
+    this.acceleration = this.force.times(1/this.mass);
   }
 
-  integrate(timestep) {//delta t
-    // Use the Forward Euler method to integrate motion
-    let acceleration = this.force.clone().divideScalar(this.mass);
-    this.velocity.add(acceleration.multiplyScalar(timestep));
-    this.position.add(this.velocity.clone().multiplyScalar(timestep));
-    this.force.set(0, 0, 0); // Reset the force for the next iteration
-    // this.ball.position = this.position; 
+  integrate(timestep) {
+    this.velocity = this.velocity.plus(this.acceleration.times(timestep));
+    this.position = this.position.plus(this.velocity.times(timestep));
+    this.force.set(0, 0, 0); 
   }
-
 }
 
 export
@@ -376,38 +411,47 @@ class Spring {
     this.particle2 = particle2;
     this.ks = ks; // Spring constant
     this.kd = kd; // Damping constant
-    this.restLength = restLength < 0 ? particle1.position.distanceTo(particle2.position) : restLength;
-    
+    this.restLength = restLength < 0 ? particle2.position.minus(particle1.position) : restLength;
   }
 
   applySpringForce() {
-    // Compute spring force as per Hooke's law and damping force
-    let distanceVec = this.particle2.position.clone().sub(this.particle1.position);
-    let distance = distanceVec.length();
-    let forceMagnitude = this.ks * (distance - this.restLength) * distanceVec.normalize(); // Hooke's law// fs
-    let dampingForce = distanceVec.clone().normalize().multiplyScalar(this.kd * this.particle2.velocity.sub(this.particle1.velocity).dot(distanceVec.normalize()));//fd
-    let viscoForce =  forceMagnitude + dampingForce ;
-    let forceOnP1 = viscoForce - this.particle1.mass* this.particle1.acceleration;
-    let forceOnP2 = viscoForce - this.particle2.mass* this.particle2.acceleration;
-
-    this.particle1.applyForce(forceOnP1);
-    this.particle2.applyForce(forceOnP2);
+    let distanceVec = this.particle2.position.minus(this.particle1.position);
+    console.log(this.particle1.position)
+    console.log(this.particle2.position)
+    // console.log(distanceVec);
+    let distance = distanceVec.norm(); // Ensure this is correctly calling the magnitude method
+    // console.log(distance);
+    let forceDirection = distanceVec.normalized();
+    // console.log(forceDirection);
+    let stretch = distance - this.restLength;
+    let forceMagnitude = this.ks*stretch;
+    let forceVector = forceDirection.times(forceMagnitude);
+    let velocityDifference = this.particle2.velocity.minus(this.particle1.velocity);
+    // console.log(forceVector);
+    // console.log(velocityDifference);
+    let dampingForce = velocityDifference.dot(forceDirection) * this.kd;
+    let dampingVector = forceDirection.times(dampingForce);
+    // console.log(dampingVector);
+    let totalForce = forceVector.plus(dampingVector.times(-1));
+    // console.log(totalForce)
+    this.particle1.applyForce(totalForce);
+    this.particle2.applyForce(totalForce.times(-1));
+    // console.log(this.particle1.force);
+    // console.log(this.particle2.force);
   }
 }
 
 // outer loop : dt
 // inner loop: t-step 
 
-
-
 export 
 class ParticleSystem {
-  constructor(gravity = vec3(0, -9.81, 0)) {
+  constructor() {
     this.particles = [];
     this.springs = [];
     this.elasitiy = 0;
     this.viscosity = 0;
-    this.gravity = gravity;
+    this.gravity = vec3(0, -9.81, 0);
     // You will need to add properties for ground parameters, integration method, etc.
   }
 
@@ -432,38 +476,36 @@ class ParticleSystem {
   }
 
   link(sindex, pindex1, pindex2, ks, kd, length) {
-  // Validate indices
-  if (pindex1 < 0 || pindex1 >= this.particles.length || pindex2 < 0 || pindex2 >= this.particles.length) {
-    console.error("Invalid particle index: ", pindex1, pindex2);
-    return;
-  }
+    // Validate indices
+    if (pindex1 < 0 || pindex1 >= this.particles.length || pindex2 < 0 || pindex2 >= this.particles.length) {
+      console.error("Invalid particle index: ", pindex1, pindex2);
+      return;
+    }
+    // Retrieve particles
+    let particle1 = this.particles[pindex1];
+    let particle2 = this.particles[pindex2];
 
-  // Retrieve particles
-  let particle1 = this.particles[pindex1];
-  let particle2 = this.particles[pindex2];
+    // Determine the rest length
+    const restLength = length < 0 ? particle1.position.minus(particle2.position) : length;
 
-  // Determine the rest length
-  const restLength = length < 0 ? particle1.position.distanceTo(particle2.position) : length;
+    // Create a new spring with the specified properties
+    const newSpring = new Spring(particle1, particle2, ks, kd, restLength);
 
-  // Create a new spring with the specified properties
-  const newSpring = new Spring(particle1, particle2, ks, kd, restLength);
-
-  // Check if sindex is within bounds and replace or add the spring accordingly
-  if (sindex >= 0 && sindex < this.springs.length) {
-    this.springs[sindex] = newSpring;
-  } else if (sindex === this.springs.length) {
-    // Adding a new spring at the end
-    this.springs.push(newSpring);
-  } else {
-    console.error("Invalid spring index: " + sindex);
-  }
+    // Check if sindex is within bounds and replace or add the spring accordingly
+    if (sindex >= 0 && sindex < this.springs.length) {
+      this.springs[sindex] = newSpring;
+    } else if (sindex === this.springs.length) {
+      // Adding a new spring at the end
+      this.springs.push(newSpring);
+    } else {
+      console.error("Invalid spring index: " + sindex);
+    }
 }
-
 
   addSpring(particle1, particle2, ks, kd, restLength) {
     // If the restLength is negative, calculate the current distance as the rest length
     if (restLength < 0) {
-      restLength = particle1.position.distanceTo(particle2.position);
+      restLength = particle1.position.minus(particle2.position);
     }
     // Create a new spring instance
     const newSpring = new Spring(particle1, particle2, ks, kd, restLength);
@@ -471,23 +513,58 @@ class ParticleSystem {
     this.springs.push(newSpring);
   }
 
-
-
   /// Method to update the system state using Forward Euler integration
   update(timestep) {
     // Apply gravity to all particles
     for (let particle of this.particles) {
-      particle.applyForce(this.gravity.multiplyScalar(particle.mass));
-    }
-
-    // Apply spring forces
-    for (let spring of this.springs) {
-      spring.applySpringForce();
+      // let gravityForce = vec3(this.gravity.x * particle.mass, this.gravity.y * particle.mass, this.gravity.z * particle.mass);
+      let gravityForce = this.gravity.times(particle.mass)
+      particle.applyForce(gravityForce);
+      console.log(particle.force);
+      // particle.applyForce(this.gravity.multiplyScalar(particle.mass));
     }
 
     // Integrate velocities and positions
     for (let particle of this.particles) {
       particle.integrate(timestep);
+      // this.resolveCollisionWithGround(particle);
+    }
+
+    // Apply spring forces
+    // for (let spring of this.springs) {
+    //   // console.log(spring);
+    //   console.log(spring.particle1)
+    //   console.log(spring.particle2)
+    //   // spring.particle1.integrate(timestep);
+    //   // spring.particle2.integrate(timestep);
+    //   spring.applySpringForce()
+    // }
+    this.springs.forEach(spring => {
+      spring.applySpringForce();
+    });
+  }
+
+  resolveCollisionWithGround(particle) {
+    // Assuming ground plane is y = 0 with normal n = [0, 1, 0]
+    const groundPoint = vec3(0, 0, 0); // P
+    const groundNormal = vec3(0, 1, 0); // n
+
+    // Calculate signed distance from particle to ground plane
+    let distance = particle.position.minus(groundPoint).dot(groundNormal);
+    
+    // Check for collision (particle is below ground)
+    if (distance < 0) {
+      // Resolve position (place particle on the ground)
+      particle.position = particle.position.plus(groundNormal.times(-distance));
+
+      // Reflect velocity about the ground plane and apply restitution
+      let restitution = 1 - this.elasticity; // Convert elasticity to restitution
+      let velocityNormalComponent = groundNormal.times(particle.velocity.dot(groundNormal));
+      let velocityTangentComponent = particle.velocity.minus(velocityNormalComponent);
+      particle.velocity = velocityTangentComponent.minus(velocityNormalComponent.times(restitution));
+      
+      // Apply friction based on viscosity if needed
+      particle.velocity = particle.velocity.minus(velocityTangentComponent.times(this.viscosity));
     }
   }
 
@@ -503,20 +580,28 @@ class Spring_Shape extends Shape {
       ambient: 1.0,
       color: line_color
     };
+    this.p1 = p1;
+    this.p2 = p2;
 
-    // Convert vec3 to arrays if necessary
-    this.updateVertices(p1, p2);
+    // // Convert vec3 to arrays if necessary
+    // this.updateVertices(p1, p2);
   }
 
   updateVertices(p1, p2) {
-    // Assuming p1 and p2 are vec3, convert to arrays of numbers for WebGL
-    this.arrays.position = [p1, p2];
-    // Define normals for each vertex (may not be necessary for simple line rendering)
-    this.arrays.normal = [[0, 0, 1], [0, 0, 1]];
+  // this.position = this.position.plus(this.velocity.times(timestep));
+  this.p1 = p1;
+  this.p2 = p2;
 
-    // If your graphics framework requires manually updating the GPU data, do it here
-    // For example: this.copy_onto_graphics_card(webgl_manager.gl);
-  }
+  this.arrays.position = [ 
+    [p1[0], p1[1], p1[2]], // Convert the first point
+    [p2[0], p2[1], p2[2]]  // Convert the second point
+  ];
+  this.arrays.normal = [
+    [0, 0, 1], // Normal for the first vertex
+    [0, 0, 1]  // Normal for the second vertex
+  ];
+  // console.log(this.arrays.position);
+}
 
   draw(webgl_manager, uniforms) {
     // Ensure the draw mode is supported and correctly implemented in your Shape's base class
