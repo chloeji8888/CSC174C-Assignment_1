@@ -516,54 +516,53 @@ class Particle {
   }
   
   resolveCollisionWithGround(elasticity, viscosity, mu_s, mu_k) {
-  const groundPoint = vec3(0, 0, 0); // Ground position P_g
-  const groundNormal = vec3(0, 1, 0); // Ground normal n̂
-  const restitution = 0.8; // Coefficient of restitution
-  let distance = this.position.minus(groundPoint).dot(groundNormal); // Distance from the ground
-  let relativeVelocity = this.velocity.dot(groundNormal); // Velocity towards the ground
-  let tangentialVelocity = this.velocity.minus(groundNormal.times(relativeVelocity));
+    const groundPoint = vec3(0, 0, 0); // Ground position P_g
+    const groundNormal = vec3(0, 1, 0); // Ground normal n̂
+    const restitution = 0.8; // Coefficient of restitution
+    let distance = this.position.minus(groundPoint).dot(groundNormal); // Distance from the ground
+    let relativeVelocity = this.velocity.dot(groundNormal); // Velocity towards the ground
+    let tangentialVelocity = this.velocity.minus(groundNormal.times(relativeVelocity));
 
-  // Calculate the spring force using Hooke's Law
-  let springForce = groundNormal.times(elasticity * Math.max(distance, 0));
-  // Calculate the damping force
-  let dampingForce = groundNormal.times(viscosity * relativeVelocity);
+    // Calculate the spring force using Hooke's Law
+    let springForce = groundNormal.times(elasticity * Math.max(distance, 0));
+    // Calculate the damping force
+    let dampingForce = groundNormal.times(viscosity * relativeVelocity);
 
-  // Calculate the normal force (spring + damping)
-  let normalForce = groundNormal.times(this.force.dot(groundNormal)).times(-1);
+    // Calculate the normal force (spring + damping)
+    let normalForce = groundNormal.times(this.force.dot(groundNormal)).times(-1);
 
-  // Update the force with spring and damping forces
-  this.force = this.force.plus(springForce.minus(dampingForce));
+    // Update the force with spring and damping forces
+    this.force = this.force.plus(springForce.minus(dampingForce));
 
-  // Apply friction if the object is touching the ground
-  if (distance < 0) {
-    this.position = this.position.plus(groundNormal.times(-distance));
-    this.velocity = this.velocity.minus(groundNormal.times(relativeVelocity * (1 + restitution)));
+    // Apply friction if the object is touching the ground
+    if (distance < 0) {
+      this.position = this.position.plus(groundNormal.times(-distance));
+      this.velocity = this.velocity.minus(groundNormal.times(relativeVelocity * (1 + restitution)));
 
-    // Check if the tangential force exceeds the static friction
-if (tangentialVelocity.norm() > 0) {
-  let tangentialForceMagnitude = this.force.minus(normalForce).norm();
-  let normalForceMagnitude = normalForce.norm();
+      // Check if the tangential force exceeds the static friction
+  if (tangentialVelocity.norm() > 0) {
+    let tangentialForceMagnitude = this.force.minus(normalForce).norm();
+    let normalForceMagnitude = normalForce.norm();
 
-  // If the tangential force is less than static friction threshold, apply a scaled-down force
-  if (tangentialForceMagnitude < mu_s * normalForceMagnitude) {
-    // Apply a slowdown factor to the velocity
-    let slowdownFactor = tangentialForceMagnitude / (mu_s * normalForceMagnitude);
-    this.velocity = this.velocity.times(slowdownFactor);
-    // Scale down the acceleration as well
-    this.acceleration = this.acceleration.times(slowdownFactor);
-  } else {
-    // Otherwise, apply kinetic friction
-    let frictionDirection = tangentialVelocity.normalized().times(-1);
-    let frictionForceMagnitude = mu_k * normalForceMagnitude;
-    let frictionForce = frictionDirection.times(frictionForceMagnitude);
-    this.force = this.force.plus(frictionForce);
-    // Adjust the velocity for kinetic friction
-    // this.velocity = this.velocity.plus(frictionForce.times(1/this.mass).times(timestep));
+    // If the tangential force is less than static friction threshold, apply a scaled-down force
+    if (tangentialForceMagnitude < mu_s * normalForceMagnitude) {
+      // Apply a slowdown factor to the velocity
+      let slowdownFactor = tangentialForceMagnitude / (mu_s * normalForceMagnitude);
+      this.velocity = this.velocity.times(slowdownFactor);
+      // Scale down the acceleration as well
+      this.acceleration = this.acceleration.times(slowdownFactor);
+    } else {
+      // Otherwise, apply kinetic friction
+      let frictionDirection = tangentialVelocity.normalized().times(-1);
+      let frictionForceMagnitude = mu_k * normalForceMagnitude;
+      let frictionForce = frictionDirection.times(frictionForceMagnitude);
+      this.force = this.force.plus(frictionForce);
+      // Adjust the velocity for kinetic friction
+      // this.velocity = this.velocity.plus(frictionForce.times(1/this.mass).times(timestep));
   }
 }
 }
   }
-
 
   integrate_Sy(timestep) {// Symlectiv Euler
     this.velocity = this.velocity.plus(this.acceleration.times(timestep));

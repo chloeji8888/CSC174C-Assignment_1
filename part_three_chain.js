@@ -46,16 +46,17 @@ const Part_three_chain_base = defs.Part_three_chain_base =
         this.spline = new HermitSpline();
         this.spline.controlPoints = [];
         this.spline.tangents = [];
-        this.spline.addPoint(vec3(0.0, 6.0, 0.0), vec3(-5.0, 0.0, 5.0));
-        this.spline.addPoint(vec3(0.0, 6.0, 5.0), vec3(5.0, 0.0, 5.0));
-        this.spline.addPoint(vec3(5.0, 6.0, 5.0), vec3(5.0, 0.0, -5.0));
-        this.spline.addPoint(vec3(5.0, 6.0, 0.0), vec3(-5.0, 0.0, -5.0));
-        this.spline.addPoint(vec3(0.0, 6.0, 0.0), vec3(-5.0, 0.0, 5.0));
+        this.spline.addPoint(vec3(0.0, 8.0, 0.0), vec3(-5.0, 0.0, 5.0));
+        this.spline.addPoint(vec3(0.0, 8.0, 5.0), vec3(5.0, 0.0, 5.0));
+        this.spline.addPoint(vec3(5.0, 8.0, 5.0), vec3(5.0, 0.0, -5.0));
+        this.spline.addPoint(vec3(5.0, 8.0, 0.0), vec3(-5.0, 0.0, -5.0));
+        this.spline.addPoint(vec3(0.0, 8.0, 0.0), vec3(-5.0, 0.0, 5.0));
+        
 
         const curves = (t)=> this.spline.getPosition(t)
         this.curve = new Curve_Shape(curves, 1000, color(1, 0, 0, 1));
 
-        const numParticles = 5; // For example, create a chain of 10 particles
+        const numParticles = 8; // For example, create a chain of 10 particles
         const particleDistance = 1; // Distance between each particle
         const ks = 5; // Spring constant for Hooke's law
         const kd = 1; // Damping constant for the springs
@@ -65,9 +66,10 @@ const Part_three_chain_base = defs.Part_three_chain_base =
 
         // Create particles in a line
         for (let i = 0; i < numParticles; i++) {
-            const position = vec3(0.0, (5.0-i) * particleDistance, 5.0); // Start from (0.0, 5.0, 0.0) and place them along the x-axis
+            const position = vec3(0.0, (8.0-i) * particleDistance, 5.0); // Start from (0.0, 5.0, 0.0) and place them along the x-axis
             const particle = new Particle(0.1, position); // Assuming mass of 1 for all particles
             this.particle.particles.push(particle);
+            console.log(this.particle.particles);
         }
         // Link particles with springs
         for (let i = 0; i < numParticles - 1; i++) {
@@ -361,10 +363,10 @@ class ParticleSystem {
     // First, update the position of the head particle to follow the spline.
     if (this.particles.length > 0) {
         // Increment the spline parameter over time to move along the spline
-        this.splineTime += this.splineSpeed * times_pairwise;
+        this.splineTime = this.splineTime + this.splineSpeed * times_pairwise;
         // Ensure the splineTime stays within a valid range, e.g., [0, 1] or loop back
         this.splineTime %= 1; // Example of looping back for continuous movement
-
+        // console.log(this.splineTime)
         // Calculate the new position of the first particle along the spline
         const newPosition = spline.getPosition(this.splineTime);
         this.particles[0].position = newPosition;
@@ -401,6 +403,7 @@ class ParticleSystem {
     // console.log('drwaw')
     const red = color(1, 0, 0, 1);
     let ball_radius = 0.25;
+    console.log(this.particles);
     for(const p of this.particles){
       // const p = this.particle.particles[i];
         // Assuming each particle has a position property
@@ -410,6 +413,7 @@ class ParticleSystem {
         // Ensure 'blue' is defined correctly as a color
         const blueColor = color(0, 0, 1, 1); // Example: Define blue using your color function
         shapes.ball.draw(webgl_manager, uniforms, ball_transform, { ...materials.metal, color: blueColor });
+        
     }
    for (const s of this.springs) {
       const p1 = s.particle1.position;
