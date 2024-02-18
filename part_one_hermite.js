@@ -90,41 +90,12 @@ const Part_one_hermite_base = defs.Part_one_hermite_base =
     }
 
 
-export class Part_one_hermite extends Part_one_hermite_base{ // **Part_one_hermite** is a Scene object that can be added to any display canvas.
-                                                     // This particular scene is broken up into two pieces for easier understanding.
-                                                     // See the other piece, My_Demo_Base, if you need to see the setup code.
-                                                     // The piece here exposes only the display() method, which actually places and draws
-                                                     // the shapes.  We isolate that code so it can be experimented with on its own.
-                                                     // This gives you a very small code sandbox for editing a simple scene, and for
-                                                     // experimenting with matrix transformations.
-                                                     // A hypothetical method to draw a line from 'start' to 'end'
+export class Part_one_hermite extends Part_one_hermite_base{ 
                                                 
 
-  render_animation( caller )
-  {                                                // display():  Called once per frame of animation.  For each shape that you want to
-    // appear onscreen, place a .draw() call for it inside.  Each time, pass in a
-    // different matrix value to control where the shape appears.
-
-    // Variables that are in scope for you to use:
-    // this.shapes.box:   A vertex array object defining a 2x2x2 cube.
-    // this.shapes.ball:  A vertex array object defining a 2x2x2 spherical surface.
-    // this.materials.metal:    Selects a shader and draws with a shiny surface.
-    // this.materials.plastic:  Selects a shader and draws a more matte surface.
-    // this.lights:  A pre-made collection of Light objects.
-    // this.hover:  A boolean variable that changes when the user presses a button.
-    // shared_uniforms:  Information the shader needs for drawing.  Pass to draw().
-    // caller:  Wraps the WebGL rendering context shown onscreen.  Pass to draw().
-
+  render_animation( caller ){
     // Call the setup code that we left inside the base class:
     super.render_animation( caller );
-
-    /**********************************
-     Start coding down here!!!!
-     **********************************/
-        // From here on down it's just some example shapes drawn for you -- freely
-        // replace them with your own!  Notice the usage of the Mat4 functions
-        // translation(), scale(), and rotation() to generate matrices, and the
-        // function times(), which generates products of matrices.
 
     const blue = color( 0,0,1,1 ), yellow = color( 1,0.7,0,1 );
 
@@ -156,68 +127,7 @@ export class Part_one_hermite extends Part_one_hermite_base{ // **Part_one_hermi
     this.new_line();
     this.key_triggered_button( "Export", [], this.export_spline );
     this.new_line();
-
-    // Some code for your reference
-    // this.key_triggered_button( "Copy input", [ "c" ], function() {
-    //   let text = document.getElementById("input").value;
-    //   console.log(text);
-    //   document.getElementById("output").value = text;
-    // } );
-// this.key_triggered_button("Calculate Arc Length", ["c"], function() {
-//   // Clear the spline data
-//   this.spline = new HermitSpline();
-//   let outputText = "";
   
-//   // Get the input text
-//   let text = document.getElementById("input").value;
-  
-//   // Split the input text into lines
-//   const commands = text.split("\n");
-
-//   // Process each line
-//   commands.forEach((commandString) => {
-//     const parts = commandString.split(" ");
-//     const commandType = parts[0];
-
-//     // Parse the 'add point' command
-//     if (commandType === "add" && parts[1] === "point" && parts.length === 8) {
-//       // Extract point and tangent coordinates from the command
-//       const point = vec3(parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4]));
-//       const tangent = vec3(parseFloat(parts[5]), parseFloat(parts[6]), parseFloat(parts[7]));
-
-//       // Add point and tangent to the spline
-//       this.spline.addPoint(point, tangent);
-//     }
-//   });
-
-//   // Calculate the arc length of the spline
-//   const arcLength = this.spline.getArcLength();
-//   // Include the size of points and tangents in the output text
-//   // outputText += `Total number of points: ${this.spline.controlPoints.length}\n`;
-//   // outputText += `Total number of tangents: ${this.spline.tangents.length}`;
-
-
-//   // Display the arc length in the output
-//   document.getElementById("output").value = `Arc Length: ${arcLength}`;
-//   // document.getElementById("output").value = outputText;
-// });
-
-    // this.new_line();
-    // this.key_triggered_button( "Relocate", [ "r" ], function() {
-    //   let text = document.getElementById("input").value;
-    //   const words = text.split(' ');
-    //   if (words.length >= 3) {
-    //     const x = parseFloat(words[0]);
-    //     const y = parseFloat(words[1]);
-    //     const z = parseFloat(words[2]);
-    //     this.ball_location = vec3(x, y, z)
-    //     document.getElementById("output").value = "success";
-    //   }
-    //   else {
-    //     document.getElementById("output").value = "invalid input";
-    //   }
-    // } );
-    
   }
 parse_commands() {
   this.spline.controlPoints = [];
@@ -317,8 +227,6 @@ parse_commands() {
 
   document.getElementById("output").value = outputText;
 }
-
-
 }
 
 export class HermitSpline{

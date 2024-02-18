@@ -97,6 +97,7 @@ export class Part_two_spring extends Part_two_spring_base
 constructor(){
   super();
   this.t_sim = 0; 
+  this.render = false;
 }
 render_animation( caller )
   {                                                // display():  Called once per frame of animation.  For each shape that you want to
@@ -131,23 +132,9 @@ render_animation( caller )
     // !!! Draw ground
     let floor_transform = Mat4.translation(0, 0, 0).times(Mat4.scale(10, 0.01, 10));
     this.shapes.box.draw( caller, this.uniforms, floor_transform, { ...this.materials.plastic, color: yellow } );
-    // !!! Draw ball (for reference)
-    // let ball_transform = Mat4.translation(this.ball_location[0], this.ball_location[1], this.ball_location[2])
-    //     .times(Mat4.scale(this.ball_radius, this.ball_radius, this.ball_radius));
-
-    // this.shapes.ball.draw( caller, this.uniforms, ball_transform, { ...this.materials.metal, color: blue } );
-    // // Assuming a render or draw method that gets called every frame
-    // for(let s = 0; s < 1000/60; s++){
-      // this.particle.update(s);
-    
-
-   
-   
-
-    // Draw the particle system
-    // this.particle.draw(caller, this.uniforms, this.shapes, this.materials);
-
-    // Calculate the time step based on the frame rate
+  
+    if(this.render){
+      // Calculate the time step based on the frame rate
     const frameRate = 60; // Target frame rate
     let dt = 1.0 / frameRate; // Time step for display updates
 
@@ -166,9 +153,14 @@ render_animation( caller )
     for (; this.t_sim <= t_next; this.t_sim += t_step) {
       this.particle.update(t_step);
     }
+    }
+  
 
     // Draw the particle system
     // console.log(this.particle.springs);
+    
+
+    
     this.particle.draw(caller, this.uniforms, this.shapes, this.materials);
     
         
@@ -208,6 +200,7 @@ render_animation( caller )
   
   }
 
+  
 
   parse_commands() {
   let inputText = document.getElementById("input").value;
@@ -342,19 +335,11 @@ render_animation( caller )
 }
 
 
-  start() { 
-    
-    // callback for Run button
-    // Clear previous output or drawings if necessary
-    // For WebGL, you might clear the canvas or reset transformations
-    // Generate a transformation matrix for the particle
-    // This assumes you have a method to convert a particle's position to a transformation matrix
-    // The specifics of this would depend on your rendering context and how you handle transformations
-    // Draw the ball using the generated transformation
-    // Assuming 'caller' and 'this.uniforms' are correctly set up context for your drawing function
-  
-  }
+  start() {
+    this.render = true;
 }
+}
+
 
 export 
 class ParticleSystem {
