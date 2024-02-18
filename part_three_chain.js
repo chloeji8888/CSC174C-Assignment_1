@@ -55,7 +55,7 @@ const Part_three_chain_base = defs.Part_three_chain_base =
         const curves = (t)=> this.spline.getPosition(t)
         this.curve = new Curve_Shape(curves, 1000, color(1, 0, 0, 1));
 
-        const numParticles = 7; // For example, create a chain of 10 particles
+        const numParticles = 6; // For example, create a chain of 10 particles
         const particleDistance = 1; // Distance between each particle
         const ks = 50; // Spring constant for Hooke's law
         const kd = 0.5; // Damping constant for the springs
@@ -74,9 +74,9 @@ const Part_three_chain_base = defs.Part_three_chain_base =
             const spring = new Spring(this.particle.particles[i], this.particle.particles[i + 1], ks, kd, particleDistance);
             this.particle.springs.push(spring);
         }
-
     // TODO: you should create the necessary shapes
       }
+      
 
       render_animation( caller )
       {                                                // display():  Called once per frame of animation.  We'll isolate out
@@ -113,6 +113,25 @@ const Part_three_chain_base = defs.Part_three_chain_base =
 
         // draw axis arrows.
         this.shapes.axis.draw(caller, this.uniforms, Mat4.identity(), this.materials.rgb);
+                // Calculate the time step based on the frame rate
+        const frameRate = 60; // Target frame rate
+        let dt = 1.0 / frameRate; // Time step for display updates
+
+        // Clamp dt to a maximum value to prevent instability (1/30 is suggested in your feedback)
+        dt = Math.min(1.0 / 30, dt);
+
+        
+        // Calculate the next simulation time
+        const t_next = this.t_sim + dt;
+        
+
+        // Use a smaller time step for the simulation updates to maintain stability
+        const t_step = 1 / 1000; // A smaller time step for the simulation (e.g., 1 millisecond)
+
+        // Update the simulation in steps until reaching the next display time
+        for (; this.t_sim <= t_next; this.t_sim += t_step) {
+          this.particle.update(t_step, this.spline);
+        }
         
       }
     }
@@ -201,7 +220,6 @@ export class HermitSpline{
         this.controlPoints.push(position);
         this.tangents.push(tangent);
         this.size++;
-        console.log(this.controlPoints);
       } else {
         console.error("Maximum number of control points (40) reached.");
       }
@@ -338,35 +356,46 @@ class ParticleSystem {
     }
 }
   /// Method to update the system state using Forward Euler integration
-  update(times_pairwise) {
-    // Example friction coefficients
-    // Apply gravity to all particles
+  update(times_pairwise, spline) {
     const mu_k = 0.9;
-    for (let particle of this.particles) {
-      particle.force = vec3(0,0,0);
-      particle.applyForce(this.gravity.times(particle.mass));
-    } 
+    // First, update the position of the head particle to follow the spline.
+    if (this.particles.length > 0) {
+        // Increment the spline parameter over time to move along the spline
+        this.splineTime += this.splineSpeed * times_pairwise;
+        // Ensure the splineTime stays within a valid range, e.g., [0, 1] or loop back
+        this.splineTime %= 1; // Example of looping back for continuous movement
 
+        // Calculate the new position of the first particle along the spline
+        const newPosition = spline.getPosition(this.splineTime);
+        this.particles[0].position = newPosition;
+    }
+
+    // Example friction coefficients
+    // Apply gravity to all particles except the first one, which follows the spline
+    for (let i = 1; i < this.particles.length; i++) {
+        let particle = this.particles[i];
+        particle.force = vec3(0,0,0);
+        particle.applyForce(this.gravity.times(particle.mass));
+    }
+
+    // Apply spring forces between connected particles
     this.springs.forEach(spring => {
-      // console.log('position1', spring.particle1.position);
-      // console.log('position2', spring.particle2.position);
-      spring.applySpringForce();
-      
+        spring.applySpringForce();
     });
 
-    for (let particle of this.particles) {
-      particle.resolveCollisionWithGround(this.elasitiy, this.viscosity, mu_k);
-      // particle.integrate_Euler(times_pairwise);
-      if(this.method == 0){
-        particle.integrate_Euler(times_pairwise);
-      }else if(this.method == 1){
-        particle.integrate_Sy(times_pairwise);
-      }else{
-        particle.integrate_VelocityVerlet(times_pairwise);
-      }
-      
+    // Update particles based on forces, excluding the first particle
+    for (let i = 1; i < this.particles.length; i++) {
+        let particle = this.particles[i];
+        particle.resolveCollisionWithGround(this.elasitiy, this.viscosity, mu_k);
+        if (this.method == 0) {
+            particle.integrate_Euler(times_pairwise);
+        } else if (this.method == 1) {
+            particle.integrate_Sy(times_pairwise);
+        } else {
+            particle.integrate_VelocityVerlet(times_pairwise);
+        }
     }
-  }
+}
 
   draw(webgl_manager, uniforms, shapes, materials){
     // console.log('drwaw')
