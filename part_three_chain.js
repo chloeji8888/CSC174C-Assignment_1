@@ -46,19 +46,19 @@ const Part_three_chain_base = defs.Part_three_chain_base =
         this.spline = new HermitSpline();
         this.spline.controlPoints = [];
         this.spline.tangents = [];
-        this.spline.addPoint(vec3(0.0, 5.0, 0.0), vec3(-20.0, 0.0, 20.0));
-        this.spline.addPoint(vec3(0.0, 5.0, 5.0), vec3(20.0, 0.0, 20.0));
-        this.spline.addPoint(vec3(5.0, 5.0, 5.0), vec3(20.0, 0.0, -20.0));
-        this.spline.addPoint(vec3(5.0, 5.0, 0.0), vec3(-20.0, 0.0, -20.0));
-        this.spline.addPoint(vec3(0.0, 5.0, 0.0), vec3(-20.0, 0.0, 20.0));
+        this.spline.addPoint(vec3(0.0, 6.0, 0.0), vec3(-5.0, 0.0, 5.0));
+        this.spline.addPoint(vec3(0.0, 6.0, 5.0), vec3(5.0, 0.0, 5.0));
+        this.spline.addPoint(vec3(5.0, 6.0, 5.0), vec3(5.0, 0.0, -5.0));
+        this.spline.addPoint(vec3(5.0, 6.0, 0.0), vec3(-5.0, 0.0, -5.0));
+        this.spline.addPoint(vec3(0.0, 6.0, 0.0), vec3(-5.0, 0.0, 5.0));
 
         const curves = (t)=> this.spline.getPosition(t)
         this.curve = new Curve_Shape(curves, 1000, color(1, 0, 0, 1));
 
-        const numParticles = 6; // For example, create a chain of 10 particles
+        const numParticles = 5; // For example, create a chain of 10 particles
         const particleDistance = 1; // Distance between each particle
-        const ks = 50; // Spring constant for Hooke's law
-        const kd = 0.5; // Damping constant for the springs
+        const ks = 5; // Spring constant for Hooke's law
+        const kd = 1; // Damping constant for the springs
 
         // Initialize particle system
         this.particle = new ParticleSystem();
@@ -66,7 +66,7 @@ const Part_three_chain_base = defs.Part_three_chain_base =
         // Create particles in a line
         for (let i = 0; i < numParticles; i++) {
             const position = vec3(0.0, (5.0-i) * particleDistance, 5.0); // Start from (0.0, 5.0, 0.0) and place them along the x-axis
-            const particle = new Particle(1, position); // Assuming mass of 1 for all particles
+            const particle = new Particle(0.1, position); // Assuming mass of 1 for all particles
             this.particle.particles.push(particle);
         }
         // Link particles with springs
